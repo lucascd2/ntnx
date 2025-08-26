@@ -64,13 +64,13 @@ The script will prompt for:
 
 ### Command Line Arguments
 ```bash
-./ngt_auto_install.py --pc-ip "10.38.11.74" --username "admin" --vm-username "administrator"
+./ngt_auto_install.py --pc-ip "10.0.0.X" --username "admin" --vm-username "administrator"
 ```
 
 ### Full Command Line Example
 ```bash
 ./ngt_auto_install.py \
-    --pc-ip "10.38.11.74" \
+    --pc-ip "10.0.0.X" \
     --username "admin" \
     --password "your-password" \
     --vm-username "administrator" \
@@ -80,12 +80,12 @@ The script will prompt for:
 
 ### Check NGT Status Only
 ```bash
-./ngt_auto_install.py --pc-ip "10.38.11.74" --username "admin" --skip-install
+./ngt_auto_install.py --pc-ip "10.0.0.X" --username "admin" --skip-install
 ```
 
 ### Dry Run Mode
 ```bash
-./ngt_auto_install.py --pc-ip "10.38.11.74" --username "admin" --dry-run
+./ngt_auto_install.py --pc-ip "10.0.0.X" --username "admin" --dry-run
 ```
 
 ## 📖 Command Line Options
@@ -164,7 +164,7 @@ The script will prompt for:
 ### Debug Mode
 Run with `--debug` flag for detailed logging:
 ```bash
-./ngt_auto_install.py --debug --pc-ip "10.38.11.74" --username "admin"
+./ngt_auto_install.py --debug --pc-ip "10.0.0.X" --username "admin"
 ```
 
 ### Log Analysis
