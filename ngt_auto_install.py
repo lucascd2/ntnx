@@ -653,7 +653,7 @@ class NGTInstaller:
         logger.info("Verifying NGT installation...")
         
         try:
-            time.sleep(5)  # Wait for installation to settle
+            time.sleep(30)  # Wait for installation to settle
             
             ngt_info, _ = self.get_guest_tools_info_with_fallback(vm_ext_id)
             
@@ -877,7 +877,7 @@ Examples:
             
             # Final verification
             logger.info("Performing final verification...")
-            time.sleep(10)  # Give it a bit more time
+            time.sleep(30)  # Give it a bit more time
             verification_result = installer.verify_ngt_installation(vm['extId'])
             
             if verification_result:
