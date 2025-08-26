@@ -622,7 +622,7 @@ class NGTInstaller:
         # Even if we timeout, try to verify installation
         return self.verify_ngt_installation_after_delay()
     
-    def verify_ngt_installation_after_delay(self, delay: int = 30) -> bool:
+    def verify_ngt_installation_after_delay(self, delay: int = 45) -> bool:
         """Verify NGT installation after a delay"""
         logger.info(f"Waiting {delay} seconds before verification...")
         time.sleep(delay)
