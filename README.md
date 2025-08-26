@@ -222,11 +222,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Nutanix API Documentation](https://www.nutanix.dev/)
 - [Prism Central API Guide](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-v2023_4:arc-api-overview-c.html)
 
-## 🆘 Support
-
-- Create an [Issue](https://github.com/yourusername/ngt-auto-install/issues) for bug reports
-- Check existing issues for solutions
-- Contribute improvements via Pull Requests
 
 ---
 
