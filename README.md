@@ -132,54 +132,7 @@ The script will prompt for:
 
 - **Automated VM Provisioning**: Integrate NGT installation into VM deployment pipelines
 - **Infrastructure Automation**: Bulk NGT installation across multiple VMs
-- **Disaster Recovery**: Quickly restore NGT on recovered VMs
 - **Development Environments**: Automate NGT setup for development VMs
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. "VM not found" Error**
-- Ensure the script is running inside a Nutanix VM
-- Verify the VM name matches exactly in Nutanix
-- Use `--vm-uuid` or `--vm-name` to specify manually
-- Check debug logs with `--debug` flag
-
-**2. "404 Client Error: NOT FOUND" during verification**
-- This is fixed in the current version
-- The script now uses compatible API versions only
-- Run with `--debug` to see which API version is being used
-
-**3. Authentication Errors**
-- Verify Prism Central IP and credentials
-- Ensure the user has proper permissions for VM operations
-- Check if the cluster is reachable from the VM
-
-**4. NGT Installation Fails**
-- Verify VM credentials are correct
-- Ensure the guest OS supports NGT
-- Check if VM has sufficient resources
-- Review VM console for installation progress
-
-### Debug Mode
-Run with `--debug` flag for detailed logging:
-```bash
-./ngt_auto_install.py --debug --pc-ip "10.0.0.X" --username "admin"
-```
-
-### Log Analysis
-The script provides detailed logging at different levels:
-- `INFO`: General progress information
-- `WARNING`: Non-critical issues that might need attention
-- `ERROR`: Critical errors that prevent operation
-- `DEBUG`: Detailed technical information for troubleshooting
-
-## 🔒 Security Considerations
-
-- **Credential Security**: Avoid passing passwords via command line in production
-- **SSL Verification**: Use `--verify-ssl` in production environments
-- **Network Security**: Ensure secure network connectivity to Prism Central
-- **VM Credentials**: Store VM credentials securely
 
 ## 🧪 Testing
 
@@ -197,16 +150,6 @@ The script provides detailed logging at different levels:
 ```bash
 ./ngt_auto_install.py --vm-uuid "your-vm-uuid" --skip-install
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📝 Changelog
 
