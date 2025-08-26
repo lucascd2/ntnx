@@ -1,0 +1,6 @@
+# Core HTTP client libraries
+requests>=2.25.0
+urllib3>=1.26.0
+
+# Python typing support for older Python versions
+typing-extensions>=3.7.4; python_version < "3.8"
