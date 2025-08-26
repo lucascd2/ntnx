@@ -161,7 +161,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Related Documentation
 
-- [Nutanix NGT Documentation](https://portal.nutanix.com/page/documents/details?targetId=Nutanix-Guest-Tools-Guide-v2_0:Nutanix-Guest-Tools-Guide-v2_0)
+- [Nutanix NGT Documentation](https://portal.nutanix.com/page/documents/details?targetId=Web-Console-Guide-Prism-v7_3:man-nutanix-guest-tool-c.html)
 - [Nutanix API Documentation](https://www.nutanix.dev/)
 - [Prism Central API Guide](https://portal.nutanix.com/page/documents/details?targetId=Prism-Central-Guide-v2023_4:arc-api-overview-c.html)
 
