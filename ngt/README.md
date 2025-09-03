@@ -35,10 +35,13 @@ A Python script that automatically installs Nutanix Guest Tools (NGT) on local v
 
 ## 📦 Installation
 
-1. **Clone the repository:**
+1. **Clone the repository or Use wget:**
    ```bash
-   git clone https://github.com/yourusername/ngt-auto-install.git
+   git clone https://github.com/lucascd2/ntnx/ngt/ngt-auto-install.git
    cd ngt-auto-install
+   ```
+   ```
+   wget https://raw.githubusercontent.com/lucascd2/ntnx/refs/heads/main/ngt/ngt_auto_install.py
    ```
 
 2. **Install dependencies:**
