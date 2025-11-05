@@ -72,7 +72,7 @@ python3 move_plan_create.py --server <move-server-ip> --username nutanix --passw
 Create `credential-mapping.csv` with VM credentials:
 
 ```csv
-servername,username,password
+servername,username,password  ###Header only for format purposes, omit this line in your file###
 vm-web-01,administrator,SecurePass123
 vm-db-01,root,DBPassword456
 vm-app-01,admin,AppPass789
