@@ -1,4 +1,4 @@
-# Nutanix Move Migration Plan Creator
+# Nutanix Move Migration Plan Creator with Custom Credential to VM mapping
 
 An interactive Python CLI tool for creating and managing VM migration plans via the Nutanix Move v2 API. This tool automates the entire migration workflow from plan creation through preparation, readiness checks, and migration execution.
 
