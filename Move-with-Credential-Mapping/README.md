@@ -130,20 +130,21 @@ After plan creation, optionally proceed with:
 ## 📊 Example Session
 
 ```bash
-$ python3 move_plan_create.py --server 10.38.18.23 --username nutanix
+$ python3 move_plan_create.py --server <IP ADDR> --username <username>
 Password: ********
 
-Connected to Move API: 10.38.18.23
+Connected to Move API: 10.x.x.x 
 Move Version: v2.3.0
 
 ==================================================
 SELECT MIGRATION DIRECTION
 ==================================================
 Source Providers (FROM):
-   1. VMware-vCenter-01 (VMware vCenter)
+   1. VMware-vCenter-01 (VMware vCenter - Not TESTED!!!)
+   2. Nutanix-Prism Central (Nutanix AHV)
    
 Target Providers (TO):
-   1. Nutanix-PHX-Cluster (Nutanix AHV)
+   1. Nutanix-Prism Central (Nutanix AHV)
 
 Enter source provider number: 1
 Enter target provider number: 1
@@ -152,11 +153,11 @@ Enter target provider number: 1
 [Network mapping...]
 [Credential application...]
 
-✅ Migration plan 'Migration-Plan-2024' created successfully!
+✅ Migration plan 'Migration-Plan-2025' created successfully!
 🆔 Plan UUID: abc123...
 📊 Plan includes 3 VMs
-📤 Source: VMware-vCenter-01
-📥 Target: Nutanix-PHX-Cluster
+📤 Source: Nutanix-AHV-Cluster
+📥 Target: Nutanix-AHV-Cluster
 
 Do you want to proceed with test migration workflow? (yes/no): yes
 
@@ -231,24 +232,6 @@ python3 test_move_auth.py
 
 This tool is based on the official Nutanix Move API v2 specification. Key endpoints used:
 
-- `/move/v2/token` - Authentication
-- `/move/v2/providers/list` - List source/target providers
-- `/move/v2/vms/list` - List VMs in provider
-- `/move/v2/plans` - Create migration plan
-- `/move/v2/plans/{id}/prepare` - Prepare VMs for migration
-- `/move/v2/plans/{id}/readiness` - Check migration readiness
-- `/move/v2/plans/{id}/start` - Start migration
-- `/move/v2/plans/{id}/workloads/list` - Monitor workload status
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
 
 ## 📜 License
 
@@ -258,15 +241,9 @@ MIT License - see LICENSE file for details
 
 This tool is provided as-is for educational and operational purposes. Always test in a lab environment before using in production. The authors are not responsible for any data loss or system issues.
 
-## 🆘 Support
-
-For issues, questions, or contributions:
-- Open an issue on GitHub
-- Review Nutanix Move documentation
-- Check Nutanix community forums
 
 ---
 
 **Version:** 2.0.0  
 **Compatible with:** Nutanix Move v2.3.0+  
-**Last Updated:** November 2024
+**Last Updated:** November 2025
