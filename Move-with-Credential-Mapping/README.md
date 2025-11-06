@@ -1,6 +1,10 @@
-# Nutanix Move Migration Plan Creator with Custom Credential to VM mapping
+# Nutanix Move Migration - Enabling a simple CSV file to map Credentials to VM Names
 
-An interactive Python CLI tool for creating and managing VM migration plans via the Nutanix Move v2 API. This tool automates the entire migration workflow from plan creation through preparation, readiness checks, and migration execution.
+An interactive Python CLI tool for creating and managing VM migration plans via the Nutanix Move v2 API. 
+
+This script helps assist with multiple local administrator (Windows) | sudo/root (Linux) passwords map to VM Server names.  
+
+Move facilitates necessary functions for VM migrations, part of which requires elevated privilages for an easier migration either between Nutanix AHV clusters or from vCenter managed environmetns just to keep it simple. 
 
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
