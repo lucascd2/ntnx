@@ -741,7 +741,7 @@ def display_provider_details(client, provider):
 
 
 
-def prepare_plan(client, plan_uuid, vms, guest_prep_mode="auto", 
+def prepare_plan(client, plan_uuid, vms, vm_credentials={}, guest_prep_mode="auto", 
                  install_ngt=True, uninstall_guest_tools=True, skip_ip_retention=False):
     """Prepare VMs for migration
     
@@ -784,16 +784,32 @@ def prepare_plan(client, plan_uuid, vms, guest_prep_mode="auto",
     # Build VMs list for prepare payload
     vm_list = []
     for vm in vms:
-        vm_list.append({
-            "UUID": vm.get('UUID'),
-            "VMId": vm.get('VMId')
-        })
-    
+        # Extract VM info using helper functions (same as create_migration_plan)
+        vm_name = get_vm_name(vm)
+        vm_uuid = get_vm_property(vm, 'VMUuid', 'UUID', 'VmID', default='')
+        vm_id = get_vm_property(vm, 'VmID', 'VMUuid', 'RecID', default='')
+        
+        vm_entry = {
+            "UUID": vm_uuid,
+            "VMId": str(vm_id) if vm_id else vm_uuid
+        }
+        
+        # Add credentials if available
+        if vm_name and vm_name in vm_credentials:
+            vm_entry['UserName'] = vm_credentials[vm_name]['username']
+            vm_entry['Password'] = vm_credentials[vm_name]['password']
+            print(f"  🔐 Adding credentials for VM '{vm_name}'")
+        else:
+            print(f"  ⚠️  No credentials found for VM '{vm_name}' - NGT install may fail")
+        
+        vm_list.append(vm_entry)
     payload = {
         "GuestPrepMode": guest_prep_mode,
         "VMs": vm_list
     }
     
+    print(f"DEBUG: Prepare URL: {prepare_url}")
+    print(f"DEBUG: Prepare payload: {json.dumps(payload, indent=2)}")
     print(f"\nSending prepare request...")
     try:
         response = client.session.post(prepare_url, json=payload, timeout=(10, 120))
@@ -1030,7 +1046,7 @@ def perform_workload_action(client, plan_uuid, workload_uuid, action):
         return False
 
 
-def test_migration_workflow(client, plan_uuid, selected_vms):
+def test_migration_workflow(client, plan_uuid, selected_vms, vm_credentials={}):
     """Interactive test migration workflow
     
     Args:
@@ -1092,7 +1108,7 @@ def test_migration_workflow(client, plan_uuid, selected_vms):
     if ip_choice in ['yes', 'y']:
         skip_ip = True
     
-    if not prepare_plan(client, plan_uuid, selected_vms, prep_mode, 
+    if not prepare_plan(client, plan_uuid, selected_vms, vm_credentials, prep_mode, 
                        install_ngt, uninstall_tools, skip_ip):
         print(f"\n❌ Prepare failed. Workflow stopped.")
         input("\nPress Enter to continue...")
@@ -1446,46 +1462,13 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
         print(f"  - {net_name} ({net_id})")
     
     if vm_networks:
-        print("\nAutomatic network mapping options:")
-        print("1. Auto-map to same network names on target (recommended)")  
-        print("2. Manual network mapping configuration")
-        print("3. Skip network mapping (may cause errors)")
+        print("\n Network mapping options:")
+        print("1. Manual network mapping configuration")  
+        print("2. Skip network mapping (may cause errors)")
         
-        mapping_choice = input("Choose option (1/2/3): ").strip()
+        mapping_choice = input("Choose option (1/2): ").strip()
         
         if mapping_choice == "1":
-            # Auto-map to same network names
-            print("\nAuto-mapping networks by name...")
-            
-            # Get target networks
-            try:
-                target_networks = target_details.get('Spec', {}).get('AOSProperties', {}).get('Clusters', [{}])[0].get('Networks', [])
-                target_network_map = {net['Name']: net['UUID'] for net in target_networks}
-                
-                print(f"Available target networks: {list(target_network_map.keys())}")
-                
-                for source_id, source_name in vm_networks:
-                    if source_name in target_network_map:
-                        mapping = {
-                            "SourceNetworkID": source_id,
-                            "TargetNetworkID": target_network_map[source_name]
-                        }
-                    # Prompt for test network
-                    test_net_uuid = prompt_for_test_network(source_name, target_net, target_networks)
-                    if test_net_uuid:
-                        mapping["TestNetworkID"] = test_net_uuid
-                    
-                        network_mappings.append(mapping)
-                        print(f"✅ Mapped: {source_name} -> {source_name}")
-                    else:
-                        print(f"⚠️  No matching target network found for '{source_name}'")
-                        
-            except Exception as e:
-                print(f"❌ Error getting target networks: {e}")
-                print("Falling back to manual configuration...")
-                mapping_choice = "2"
-        
-        if mapping_choice == "2":
             # Manual mapping with numbered selection
             print("\nManual network mapping configuration:")
             
@@ -1524,12 +1507,8 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
                             if test_net_uuid:
                                 mapping["TestNetworkID"] = test_net_uuid
                             
-                                network_mappings.append(mapping)
-                                break
-                            else:
-                                print(f"❌ No matching network named '{source_name}' on target")
-                                print("   Please enter a network number, UUID, or 'auto'")
-                                continue
+                            network_mappings.append(mapping)
+                            break
                         except:
                             print("❌ Could not auto-map, please enter number or UUID")
                             continue
@@ -1551,11 +1530,8 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
                         if test_net_uuid:
                             mapping["TestNetworkID"] = test_net_uuid
                         
-                            network_mappings.append(mapping)
-                            break
-                        else:
-                            print(f"❌ Invalid number. Please enter 1-{len(target_networks)}")
-                            continue
+                        network_mappings.append(mapping)
+                        break
                     
                     elif target_net:
                         # Check if input looks like a UUID (has dashes) or a name
@@ -1580,11 +1556,8 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
                                     if test_net_uuid:
                                         mapping["TestNetworkID"] = test_net_uuid
                                     
-                                        network_mappings.append(mapping)
-                                        break
-                                    else:
-                                        print("   Please enter the UUID or type 'auto'")
-                                        continue
+                                    network_mappings.append(mapping)
+                                    break
                                 else:
                                     print(f"   Network '{target_net}' not found. Please enter UUID.")
                                     continue
@@ -1602,12 +1575,9 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
                         if test_net_uuid:
                             mapping["TestNetworkID"] = test_net_uuid
                         
-                            network_mappings.append(mapping)
-                            print(f"✅ Added mapping: {source_name} -> {target_net}")
-                            break
-                    else:
-                        print(f"⚠️  Network mapping required! Enter UUID or type 'auto'")
-                        continue
+                        network_mappings.append(mapping)
+                        print(f"✅ Added mapping: {source_name} -> {target_net}")
+                        break
         
         elif mapping_choice == "3":
             print("⚠️  Skipping network mapping - this may cause API errors")
@@ -1631,7 +1601,38 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
         plan_name = input("Enter migration plan name: ").strip()
         if plan_name:
             break
-        print("❌ Plan name cannot be empty. Please try again.")
+        print("❌ Plan name cannot be empty. Please try again.")    
+    # Step 5.5: Guest Tools Configuration
+    print("\nStep 5.5: Guest tools configuration...")
+    print("  1. Install Nutanix Guest Tools (NGT) on cutover")
+    print("  2. Uninstall existing guest tools (VMware Tools/Hyper-V IC)")
+    print("  3. Retain IP addresses from source")
+    
+    install_ngt = True
+    ngt_choice = input("\nInstall NGT on cutover? (yes/no) [yes]: ").strip().lower()
+    if ngt_choice in ['no', 'n']:
+        install_ngt = False
+        print("  ⚠️  NGT will NOT be installed on target VMs")
+    else:
+        print("  ✅ NGT will be installed on target VMs")
+    
+    uninstall_tools = True
+    uninstall_choice = input("Uninstall existing guest tools? (yes/no) [yes]: ").strip().lower()
+    if uninstall_choice in ['no', 'n']:
+        uninstall_tools = False
+        print("  ⚠️  Existing guest tools will NOT be uninstalled")
+    else:
+        print("  ✅ Existing guest tools will be uninstalled")
+    
+    retain_ip = True
+    ip_choice = input("Retain IP addresses? (yes/no) [yes]: ").strip().lower()
+    if ip_choice in ['no', 'n']:
+        retain_ip = False
+        print("  ⚠️  IP addresses will NOT be retained")
+    else:
+        print("  ✅ IP addresses will be retained")
+    
+
     
     
     # Step 4: Create the migration plan
@@ -1645,7 +1646,10 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
         target_info,  # Pass the complete target info instead of just UUID
         selected_vms,  # Use selected_vms instead of selected_vm_objects
         credentials,
-        network_mappings
+        network_mappings,
+        install_ngt,
+        uninstall_tools,
+        retain_ip
     )
     
     
@@ -1673,7 +1677,7 @@ def migration_plan_workflow(client, source_uuid, target_uuid, selected_vm_names,
         print("5. ✔️  Verify migration success and cleanup")
         
         # Optionally proceed with test migration workflow
-        test_migration_workflow(client, plan_uuid, selected_vms)
+        test_migration_workflow(client, plan_uuid, selected_vms, credentials)
     else:
         print("\n❌ Migration plan creation failed!")
         print(f"Plan Name: {plan_name}")
@@ -1765,7 +1769,7 @@ def read_credential_mapping(csv_file_path="./credential-mapping.csv"):
         return {}
 
 
-def create_migration_plan(client, plan_name, source_info, target_info, selected_vms, vm_credentials, network_mappings=None):
+def create_migration_plan(client, plan_name, source_info, target_info, selected_vms, vm_credentials, network_mappings=None, install_ngt=True, uninstall_guest_tools=True, retain_ip=True):
     """Create a migration plan using the Move API with full configuration
     
     Args:
@@ -1776,6 +1780,9 @@ def create_migration_plan(client, plan_name, source_info, target_info, selected_
         selected_vms: List of selected VM objects
         vm_credentials: Dictionary mapping VM names to credentials
         network_mappings: List of network mapping dicts (optional)
+        install_ngt: Install Nutanix Guest Tools on cutover (default: True)
+        uninstall_guest_tools: Uninstall VMware Tools/Hyper-V IC (default: True)
+        retain_ip: Retain IP addresses from source (default: True)
         
     Returns:
         Created plan UUID or None if failed
@@ -1810,25 +1817,27 @@ def create_migration_plan(client, plan_name, source_info, target_info, selected_
                 "UUID": vm_uuid,
                 "VMID": str(vm_id) if vm_id else vm_uuid
             },
-            "VMCustomizeType": "replicate",  # Default customization
-            "GuestPrepMode": "auto"     # Automatic guest preparation (lowercase)
+            "VMCustomizeType": "replicate",
+            "GuestPrepMode": "auto",
+            "InstallNGT": install_ngt,
+            "UninstallGuestTools": uninstall_guest_tools,
+            "SkipIPRetention": not retain_ip
         }
         
         # Add credentials if available
         if vm_name in vm_credentials:
             creds = vm_credentials[vm_name]
-            vm_workload["VMCustomizationConfig"] = {
-                "GuestCredentials": {
-                    "UUID": vm_uuid,
-                    "VMId": str(vm_id) if vm_id else vm_uuid,
-                    "UserName": creds['username'],
-                    "Password": creds['password']
-                }
+            vm_workload["GuestCredentials"] = {
+                "UUID": vm_uuid,
+                "VMId": str(vm_id) if vm_id else vm_uuid,
+                "UserName": creds['username'],
+                "Password": creds['password']
             }
             vms_with_credentials += 1
             print(f"  ✅ VM '{vm_name}' - credentials mapped")
         else:
             print(f"  ⚠️  VM '{vm_name}' - no credentials found in mapping file")
+        
         
         vm_workloads.append(vm_workload)
     
