@@ -18,7 +18,7 @@ When AD or LDAP isn't an option, this script will read a comma seperate value fi
 - **JWT Authentication** - Secure token-based authentication with Nutanix Move API
 - **Provider Management** - Browse and select source/target providers
 - **VM Selection** - Interactive VM browser with filtering and pagination
-- **Smart Network Mapping** - Auto-mapping, manual selection, or numbered selection
+- **Smart Network Mapping** - manual selection, or numbered selection
 - **Test Network Support** - Separate network configuration for test migrations
 - **Credential Management** - CSV-based VM credentials with auto-detection
 - **Auto-Selection** - Automatically selects single clusters/containers
@@ -90,9 +90,8 @@ vm-app-01,admin,AppPass789
 
 During plan creation, you'll be prompted to map networks:
 
-1. **Auto-mapping** - Automatically matches networks by name (if names are identical)
-2. **Manual selection** - Choose target network from list
-3. **Test network** - Optionally specify a separate network for test migrations
+1. **Manual selection** - Choose target network from list
+2. **Test network** - Optionally specify a separate network for test migrations
 
 ## 🔄 Migration Workflow
 
