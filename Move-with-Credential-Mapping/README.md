@@ -6,7 +6,7 @@ This script helps assist with multiple local administrator (Windows) | sudo/root
 
 Move facilitates necessary functions for VM migrations, part of which requires elevated privilages for an easier migration either between Nutanix AHV clusters or from vCenter managed environmetns just to keep it simple. 
 
-When AD or LDAP isn't an option, this script will read a comma seperate file (csv) to map the credentials to the VM name
+When AD or LDAP isn't an option, this script will read a comma seperate value file (csv) to map the credentials to the VM name
 
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
