@@ -1,6 +1,6 @@
 # Nutanix Prism Central IAM Manager
 
-A comprehensive Python tool for managing Identity and Access Management (IAM) in Nutanix Prism Central. This interactive script allows you to explore roles, search users, and analyze authorization policies through the Nutanix IAM v4.1.b2 API.
+A comprehensive Python tool for viewing Identity and Access Management (IAM) in Nutanix Prism Central. This interactive script allows you to explore roles, search users, and analyze authorization policies through the Nutanix IAM v4.1.b2 API.
 
 ## Features
 
@@ -25,15 +25,7 @@ A comprehensive Python tool for managing Identity and Access Management (IAM) in
 - Network access to Nutanix Prism Central
 - Valid Prism Central credentials with appropriate IAM permissions
 
-## Installation
-
-1. Clone this repository:
-```bash
-git clone <repository-url>
-cd nutanix-iam-manager
-```
-
-2. Install required Python packages:
+Install required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
