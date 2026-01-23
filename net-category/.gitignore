@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Credentials and sensitive data
+*.key
+*.pem
+*.crt
+credentials.txt
+passwords.txt
+config.ini
+.env
+
+# Test outputs
+output.txt
+output2.txt
+debug.txt
+issue.txt
+*.log
+
+# API specs (large files, keep separately)
+# Uncomment if you don't want to commit API specs
+# *.yaml
+
+# Temporary files
+*.tmp
+temp/
+tmp/
