@@ -1,6 +1,6 @@
 # Nutanix Prism Central IAM Manager
 
-A comprehensive Python tool for viewing Identity and Access Management (IAM) in Nutanix Prism Central. This interactive script allows you to explore roles, search users and groups, and analyze authorization policies through the Nutanix IAM v4.1.b2 API.
+A comprehensive Python tool for viewing Identity and Access Management (IAM) in Nutanix Prism Central. This interactive script allows you to explore roles, search users, and analyze authorization policies through the Nutanix IAM v4.1.b2 API.
 
 ## Features
 
@@ -13,13 +13,6 @@ A comprehensive Python tool for viewing Identity and Access Management (IAM) in 
 - **Smart User Search**: Find users by username or display name with partial matching
 - **User Details**: View comprehensive user information
 - **Authorization Policy Discovery**: Find all policies that apply to a specific user
-
-
-### 👥 Group Search & Analysis
-- **Smart Group Search**: Find user groups by name or distinguished name with partial matching
-- **Group Details**: View comprehensive group information including group type (LDAP/SAML)
-- **Authorization Policy Discovery**: Find all policies that apply to a specific group
-- **Distinguished Name Support**: Search using common names or full distinguished names
 
 ### 📋 Authorization Policy Management
 - **Policy Exploration**: Browse and examine authorization policies
@@ -61,7 +54,6 @@ Nutanix Prism Central IAM Manager
 Options:
 • Enter a number (1-X) to view role permissions
 • Enter 'u' to search users and view their authorization policies
-• Enter 'g' to search groups and view their authorization policies
 • Enter 'r' to refresh the role list
 • Enter 'q' to quit
 ```
@@ -73,17 +65,6 @@ Options:
    - Example: "john" finds "john.doe", "johnsmith", "John Admin"
 3. **Select User**: Choose from the list of found users
 4. **View Policies**: See all authorization policies assigned to that user
-5. **Examine Details**: Select specific policies for detailed information
-
-
-### Group Search Workflow
-
-1. **Enter 'g'** from the main menu
-2. **Search**: Enter group name or distinguished name (supports partial matches)
-   - Example: "admin" finds "Domain Admins", "local-admin-group"
-   - Example: "cn=admins" finds groups with that distinguished name pattern
-3. **Select Group**: Choose from the list of found groups
-4. **View Policies**: See all authorization policies assigned to that group
 5. **Examine Details**: Select specific policies for detailed information
 
 ### Example Session

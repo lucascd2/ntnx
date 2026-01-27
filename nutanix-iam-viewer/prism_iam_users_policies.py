@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Interactive script for Nutanix Prism Central IAM management - roles, users, and authorization policies.
-Based on Nutanix IAM v4.1.b2 API specification. Supports role management, user search, and authorization policy viewing.
+Interactive script for Nutanix Prism Central IAM management - roles, users, groups, and authorization policies.
+Based on Nutanix IAM v4.1.b2 API specification. Supports role management, user search, group search, and authorization policy viewing.
 """
 
 import requests
@@ -144,6 +144,83 @@ class PrismCentralIAM:
         """Get detailed information about a specific user"""
         endpoint = f"/iam/v4.1.b2/authn/users/{user_ext_id}"
         return self._make_request("GET", endpoint)
+
+    def list_groups(self, limit=100, page=0, group_filter=None):
+        """List all user groups with optional group filtering"""
+        if limit > 100:
+            limit = 100
+        endpoint = "/iam/v4.1.b2/authn/user-groups"
+        params = {"$limit": limit, "$page": page}
+        
+        # Add group filter if provided
+        if group_filter:
+            # Use OData filtering for group search
+            params["$filter"] = f"startswith(name, '{group_filter}') or contains(name, '{group_filter}') or startswith(distinguishedName, '{group_filter}') or contains(distinguishedName, '{group_filter}')"
+        
+        return self._make_request("GET", endpoint, params=params)
+
+    def get_group_details(self, group_ext_id):
+        """Get detailed information about a specific group"""
+        endpoint = f"/iam/v4.1.b2/authn/user-groups/{group_ext_id}"
+        return self._make_request("GET", endpoint)
+    
+    def get_group_authorization_policies(self, group_ext_id, group_name):
+        """Get authorization policies that apply to a specific group"""
+        print(f"Fetching authorization policies for group: {group_name}")
+        
+        # Get all authorization policies
+        policies_response = self.list_authorization_policies(limit=100)
+        if not policies_response or 'data' not in policies_response:
+            return []
+        
+        all_policies = policies_response['data']
+        group_policies = []
+        
+        # Filter policies that apply to this group
+        for policy in all_policies:
+            policy_ext_id = policy['extId']
+            
+            # Get detailed policy information
+            policy_details_response = self.get_authorization_policy_details(policy_ext_id)
+            if not policy_details_response or 'data' not in policy_details_response:
+                continue
+                
+            policy_data = policy_details_response['data']
+            
+            # Check if this policy applies to our group
+            if self._group_matches_identity_filter(group_ext_id, group_name, policy_data):
+                # Add the detailed policy data instead of just the summary
+                group_policies.append(policy_data)
+        
+        return group_policies
+    
+    def _group_matches_identity_filter(self, group_ext_id, group_name, policy_data):
+        """Check if a group matches the identity filter in an authorization policy"""
+        identities = policy_data.get('identities', [])
+        
+        for identity in identities:
+            identity_filter = identity.get('identityFilter', {})
+            
+            # Check if this identity filter matches our group
+            # Groups can be matched by extId or name in various filter formats
+            filter_str = str(identity_filter).lower()
+            
+            # Check for group external ID
+            if group_ext_id.lower() in filter_str:
+                return True
+                
+            # Check for group name
+            if group_name and group_name.lower() in filter_str:
+                return True
+                
+            # Check for group-specific filter patterns
+            if 'group' in filter_str or 'usergroup' in filter_str:
+                # More sophisticated matching could be added here
+                # For now, we'll do basic string matching
+                return True
+        
+        return False
+
 
     def list_authorization_policies(self, limit=100, page=0):
         """List all authorization policies"""
@@ -321,6 +398,112 @@ def print_policy_details(policy, role_details=None):
         if len(identities) > 3:
             print(f"  ... and {len(identities) - 3} more identities")
 
+def print_groups_table(groups):
+    """Print groups in a formatted table"""
+    print(f"\n{'#':<4} {'Group Name':<30} {'Distinguished Name':<50} {'Type':<8}")
+    print("-" * 92)
+    
+    for i, group in enumerate(groups, 1):
+        name = group.get('name', 'N/A')[:29]
+        dn = group.get('distinguishedName', 'N/A')[:49]
+        group_type = group.get('groupType', 'N/A')[:7]
+        print(f"{i:<4} {name:<30} {dn:<50} {group_type:<8}")
+
+def search_and_display_group_policies(pc_iam, operations_cache):
+    """Search for a group and display their authorization policies"""
+    print(f"\n{'='*60}")
+    print("Group Authorization Policy Search")
+    print(f"{'='*60}")
+    
+    # Get search term
+    search_term = input("Enter group name to search for: ").strip()
+    if not search_term:
+        print("Search term is required.")
+        return
+    
+    # Search for groups
+    print(f"\nSearching for groups matching '{search_term}'...")
+    groups_response = pc_iam.list_groups(limit=100, group_filter=search_term)
+    
+    if not groups_response or 'data' not in groups_response:
+        print("Error: Could not retrieve groups.")
+        return
+    
+    groups = groups_response['data']
+    if not groups:
+        print(f"No groups found matching '{search_term}'.")
+        return
+    
+    # Display found groups
+    print(f"Found {len(groups)} group(s):")
+    print_groups_table(groups)
+    
+    # Let user select which group to analyze
+    if len(groups) == 1:
+        selected_group = groups[0]
+        print(f"\nAnalyzing authorization policies for: {selected_group.get('name', 'N/A')}")
+    else:
+        try:
+            choice = input(f"\nSelect group (1-{len(groups)}): ").strip()
+            group_index = int(choice) - 1
+            if 0 <= group_index < len(groups):
+                selected_group = groups[group_index]
+            else:
+                print("Invalid selection.")
+                return
+        except ValueError:
+            print("Invalid input.")
+            return
+    
+    # Get group details
+    group_ext_id = selected_group['extId']
+    group_name = selected_group.get('name', 'N/A')
+    
+    # Find authorization policies for this group
+    print(f"\nSearching for authorization policies for group: {group_name}")
+    group_policies = pc_iam.get_group_authorization_policies(group_ext_id, group_name)
+    
+    if not group_policies:
+        print(f"No authorization policies found for group: {group_name}")
+        return
+    
+    # Display policies
+    print(f"\nFound {len(group_policies)} authorization policies for group: {group_name}")
+    print_authorization_policies_table(group_policies)
+    
+    # Allow user to view policy details
+    while True:
+        print(f"\nOptions:")
+        print(f"• Enter a number (1-{len(group_policies)}) to view policy details")
+        print("• Enter 'q' to return to main menu")
+        
+        choice = input("\nYour choice: ").strip().lower()
+        
+        if choice == 'q':
+            break
+        
+        try:
+            policy_index = int(choice) - 1
+            if 0 <= policy_index < len(group_policies):
+                selected_policy = group_policies[policy_index]
+                
+                # Get role details if available
+                role_details = None
+                role = selected_policy.get('role', {})
+                if role and 'extId' in role:
+                    role_response = pc_iam.get_role_details(role['extId'])
+                    if role_response and 'data' in role_response:
+                        role_details = role_response['data']
+                
+                print_policy_details(selected_policy, role_details)
+                
+                input("\nPress Enter to continue...")
+            else:
+                print("Invalid selection.")
+        except ValueError:
+            print("Invalid input. Please enter a number or 'q'.")
+
+
 def search_and_display_user_policies(pc_iam, operations_cache):
     """Search for a user and display their authorization policies"""
     print(f"\n{'='*60}")
@@ -480,6 +663,7 @@ def main():
             print(f"\nOptions:")
             print("• Enter a number (1-{}) to view role permissions".format(len(roles)))
             print("• Enter 'u' to search users and view their authorization policies")
+            print("• Enter 'g' to search groups and view their authorization policies")
             print("• Enter 'r' to refresh the role list")
             print("• Enter 'q' to quit")
             
@@ -492,6 +676,9 @@ def main():
                 continue
             elif choice == 'u':
                 search_and_display_user_policies(pc_iam, operations_cache)
+                continue
+            elif choice == 'g':
+                search_and_display_group_policies(pc_iam, operations_cache)
                 continue
             else:
                 try:
@@ -522,7 +709,7 @@ def main():
                     else:
                         print("Invalid selection. Please enter a valid number.")
                 except ValueError:
-                    print("Invalid input. Please enter a number, 'u', 'r', or 'q'.")
+                    print("Invalid input. Please enter a number, 'u', 'g', 'r', or 'q'.")
                 except KeyboardInterrupt:
                     print("\nOperation cancelled.")
                     continue
