@@ -653,7 +653,7 @@ class NGTInstaller:
         logger.info("Verifying NGT installation...")
         
         try:
-            time.sleep(30)  # Wait for installation to settle
+            time.sleep(60)  # Wait for installation to settle
             
             ngt_info, _ = self.get_guest_tools_info_with_fallback(vm_ext_id)
             
