@@ -1,0 +1,80 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.pytest_cache/
+
+# Environment files with credentials
+.env
+.env.*
+*.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+*.log
+
+# Backup files
+*.backup
+*.bad
+*.bak
+*~
+
+# Swagger specs (large files)
+swagger-*.yml
+swagger-*.yaml
+
+# Deployment scripts with credentials
+start.sh
+stop.sh
+lookup_vm_name.sh
+
+# Python virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Kubernetes secrets
+secrets/
+*.secret.yaml
