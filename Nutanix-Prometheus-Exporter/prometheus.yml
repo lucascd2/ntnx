@@ -13,8 +13,7 @@ scrape_configs:
       - targets: ['nutanix-exporter:8080']
     scrape_interval: 60s
     scrape_timeout: 30s
-    #metrics_path: /metrics  - Note uncomment and comment out metrics_path: /health if no results or connection reset issues
-    metrics_path: /health
+    metrics_path: /metrics  
     honor_labels: true
     
     # Optional: Add labels to identify this exporter instance
