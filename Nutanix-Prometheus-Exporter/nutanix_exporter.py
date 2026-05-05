@@ -99,9 +99,16 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 
                 logger.debug(f"Served metrics request from {self.client_address[0]}")
                 
+            except (ConnectionResetError, BrokenPipeError) as e:
+                # Client disconnected - data may have been sent successfully
+                # This is common with Prometheus scrapes and not necessarily an error
+                logger.debug(f"Connection closed by client: {e}")
             except Exception as e:
-                logger.error(f"Error serving metrics: {e}")
-                self.send_error(500, f"Error generating metrics: {e}")
+                logger.error(f"Error generating metrics: {e}")
+                try:
+                    self.send_error(500, f"Error generating metrics: {e}")
+                except (ConnectionResetError, BrokenPipeError):
+                    pass  # Can't send error, connection already closed
         
         elif self.path == '/health':
             self.send_response(200)
