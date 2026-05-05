@@ -4,7 +4,7 @@ import os
 import time
 import logging
 import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, CollectorRegistry
 from nutanix_client import NutanixClient
 from collectors import VMStatsCollector, ClusterCollector, AlertCollector, InfrastructureCollector, HostStorageCollector, ClusterPerformanceCollector, VMSnapshotCollector
@@ -93,6 +93,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
                 
                 self.send_response(200)
                 self.send_header('Content-Type', CONTENT_TYPE_LATEST)
+                self.send_header('Content-Length', str(len(output)))
                 self.end_headers()
                 self.wfile.write(output)
                 
@@ -126,7 +127,7 @@ def main():
         
         # Start HTTP server
         handler = lambda *args: MetricsHandler(exporter)(*args)
-        httpd = HTTPServer(('0.0.0.0', exporter.port), handler)
+        httpd = ThreadingHTTPServer(('0.0.0.0', exporter.port), handler)
         
         logger.info(f"Starting HTTP server on port {exporter.port}")
         logger.info("Available endpoints:")
