@@ -229,7 +229,7 @@ class NutanixClient:
             List of cluster data
         """
         endpoint = '/clustermgmt/v4.2/config/clusters'
-        params = {'$limit': limit}
+        params = {'$limit': min(limit, 50)}
         
         try:
             response = self._make_request('GET', endpoint, params=params)
@@ -250,7 +250,7 @@ class NutanixClient:
             List of host data
         """
         endpoint = '/clustermgmt/v4.2/config/hosts'
-        params = {'$limit': limit}
+        params = {'$limit': min(limit, 50)}
         
         if cluster_id:
             #params['$filter'] = f"clusterReference/extId eq '{cluster_id}'"  # Disabled due to API compatibility
@@ -275,7 +275,7 @@ class NutanixClient:
             List of alert data
         """
         endpoint = '/monitoring/v4.2/serviceability/alerts'
-        params = {'$limit': limit}
+        params = {'$limit': min(limit, 50)}
         
         if severity:
             params['$filter'] = f"severity eq '{severity}'"
@@ -298,7 +298,7 @@ class NutanixClient:
             List of storage container data
         """
         endpoint = '/clustermgmt/v4.2/config/storage-containers'
-        params = {'$limit': limit}
+        params = {'$limit': min(limit, 50)}
         
         try:
             response = self._make_request('GET', endpoint, params=params)
@@ -308,7 +308,7 @@ class NutanixClient:
             return []
     def get_vms(self, vm_type: str = 'ahv', limit: int = 500) -> List[Dict]:
         """
-        Get VM configuration information
+        Get VM configuration information with pagination.
         
         Args:
             vm_type: VM type ('ahv' or 'esxi')
@@ -321,14 +321,37 @@ class NutanixClient:
             raise ValueError("vm_type must be 'ahv' or 'esxi'")
         
         endpoint = f'/vmm/v4.2/{vm_type}/config/vms'
-        params = {'$limit': limit}
+        page_limit = 50  # Reduced from 100 to avoid PLAT-10006 on large VM config list queries
+        all_vms = []
+        offset = 0
         
-        try:
-            response = self._make_request('GET', endpoint, params=params)
-            return response.get('data', [])
-        except NutanixAPIException as e:
-            logger.error(f"Failed to get VMs: {e}")
-            return []
+        while len(all_vms) < limit:
+            current_limit = min(page_limit, limit - len(all_vms))
+            params = {
+                '$limit': current_limit,
+                '$offset': offset,
+            }
+            
+            try:
+                response = self._make_request('GET', endpoint, params=params)
+                page_data = response.get('data', [])
+                
+                if not page_data:
+                    break
+                
+                all_vms.extend(page_data)
+                
+                if len(page_data) < current_limit:
+                    break
+                
+                offset += current_limit
+                time.sleep(0.05)
+                
+            except NutanixAPIException as e:
+                logger.error(f"Failed to get VMs for {vm_type} (offset {offset}): {e}")
+                break
+        
+        return all_vms
     
     def get_disks(self, limit: int = 100) -> List[Dict]:
         """
@@ -341,7 +364,7 @@ class NutanixClient:
             List of disk data
         """
         endpoint = '/clustermgmt/v4.2/config/disks'
-        params = {'$limit': limit}
+        params = {'$limit': min(limit, 50)}
         
         try:
             response = self._make_request('GET', endpoint, params=params)
@@ -526,7 +549,7 @@ class NutanixClient:
             raise ValueError("vm_type must be 'ahv' or 'esxi'")
         
         endpoint = f'/vmm/v4.2/{vm_type}/config/vms'
-        page_limit = 100  # API maximum per page
+        page_limit = 50  # Reduced from 100 to avoid PLAT-10006 on large VM config list queries
         all_vm_configs = []
         offset = 0
         
@@ -561,13 +584,14 @@ class NutanixClient:
         return all_vm_configs
 
     def get_all_vms_with_names(self, vm_type: str = 'ahv') -> Dict[str, str]:
-        """Get VM names by fetching from each cluster separately
+        """Get VM names by fetching from each cluster separately with pagination.
         
-        This works around pagination bugs by fetching VMs per cluster,
-        which typically has <100 VMs per cluster.
+        This works around large unfiltered list issues by fetching VMs per cluster
+        in smaller pages.
         """
         try:
             vm_map = {}
+            page_limit = 50
             
             # Get all clusters first
             clusters = self.get_clusters(limit=50)
@@ -578,33 +602,56 @@ class NutanixClient:
                 logger.warning("No clusters found, trying unfiltered VM fetch")
                 return self._get_vms_unfiltered(vm_type)
             
-            # Fetch VMs from each cluster
+            # Fetch VMs from each cluster with pagination
             for cluster in clusters:
                 cluster_id = cluster.get('extId')
                 cluster_name = cluster.get('name', 'unknown')
                 
                 if not cluster_id:
                     continue
-                    
+                cluster_vm_count = 0
+                offset = 0
+                previous_page_ids = set()  # Track IDs from previous page to detect duplicates
+                
                 try:
-                    # Use cluster filter to get VMs from this specific cluster
-                    params = {
-                        '$limit': 100,  # Max limit per API constraint
-                        '$filter': f"cluster/extId eq '{cluster_id}'",
-                        '$select': 'name,extId,cluster'
-                    }
+                    while True:
+                        params = {
+                            '$limit': page_limit,  # Reduced from 100 to avoid PLAT-10006 on large per-cluster VM list queries
+                            '$offset': offset,
+                            '$filter': f"cluster/extId eq '{cluster_id}'",
+                            '$select': 'name,extId,cluster'
+                        }
+                        
+                        response = self._make_request('GET', f'/vmm/v4.2/{vm_type}/config/vms', params=params)
+                        vms = response.get('data', [])
+                        
+                        if not vms:
+                            break
+                        
+                        
+                        # Check for duplicate page (pagination loop detection)
+                        current_page_ids = {vm.get('extId') for vm in vms if vm.get('extId')}
+                        if offset > 0 and current_page_ids == previous_page_ids:
+                            logger.warning(f"Cluster {cluster_name}: detected duplicate page at offset {offset}, breaking pagination loop")
+                            break
+                        
+                        previous_page_ids = current_page_ids
+                        cluster_vm_count += len(vms)
+                        
+                        for vm in vms:
+                            vm_id = vm.get('extId')
+                            vm_name = vm.get('name', 'unknown')
+                            if vm_id:
+                                vm_map[vm_id] = vm_name
+                        
+                        if len(vms) < page_limit:
+                            break
+                        
+                        offset += page_limit
+                        time.sleep(0.05)
                     
-                    response = self._make_request('GET', f'/vmm/v4.2/{vm_type}/config/vms', params=params)
-                    vms = response.get('data', [])
+                    logger.info(f"Cluster {cluster_name}: got {cluster_vm_count} {vm_type} VMs")
                     
-                    logger.info(f"Cluster {cluster_name}: got {len(vms)} {vm_type} VMs")
-                    
-                    for vm in vms:
-                        vm_id = vm.get('extId')
-                        vm_name = vm.get('name', 'unknown')
-                        if vm_id:
-                            vm_map[vm_id] = vm_name
-                            
                 except Exception as e:
                     logger.warning(f"Failed to fetch VMs from cluster {cluster_name}: {e}")
                     continue
@@ -615,13 +662,13 @@ class NutanixClient:
         except Exception as e:
             logger.error(f"Error getting VM names: {e}")
             return {}
-    
+
     def _get_vms_unfiltered(self, vm_type: str) -> Dict[str, str]:
         """Fallback: Get VMs without cluster filtering (original pagination approach)"""
         try:
             vm_map = {}
             page_num = 0
-            limit = 100
+            limit = 50
             max_pages = 100
             use_offset = False
             
